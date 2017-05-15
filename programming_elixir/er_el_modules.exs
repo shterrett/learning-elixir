@@ -1,0 +1,5 @@
+:io.format("~.2f~n", [123.456])
+System.get_env("HOME")
+Path.extname("./er_el_modules.exs")
+System.cwd!()
+System.cmd("ls", ["-l"])
