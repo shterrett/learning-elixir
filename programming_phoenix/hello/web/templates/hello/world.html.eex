@@ -1,0 +1,2 @@
+<h1>Hello <%= String.capitalize @name %>!</h1>
+<h2>Did we recompile?</h2>
