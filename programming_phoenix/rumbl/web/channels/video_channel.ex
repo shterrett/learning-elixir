@@ -1,4 +1,5 @@
 defmodule Rumbl.VideoChannel do
+  require Logger
   use Rumbl.Web, :channel
 
   def join("videos:" <> video_id, params, socket) do
@@ -31,15 +32,38 @@ defmodule Rumbl.VideoChannel do
 
     case Repo.insert(changeset) do
       { :ok, annotation } ->
-        broadcast! socket, "new_annotation", %{
-          user: Rumbl.UserView.render("user.json", %{ user: user }),
-          body: params["body"],
-          at: params["at"]
-        }
+        broadcast_annotation(socket, annotation)
+        Logger.debug "Starting async task!"
+        Task.start_link(fn -> compute_additional_info(annotation, socket) end)
+        Logger.debug "Async task started!"
         { :reply, :ok, socket }
 
       { :error, changeset } ->
         { :reply, { :error, %{ errors: changeset } }, socket }
+    end
+  end
+
+  defp broadcast_annotation(socket, annotation) do
+    annotation = Repo.preload(annotation, :user)
+    rendered_ann = Phoenix.View.render(Rumbl.AnnotationView, "annotation.json", %{
+      annotation: annotation
+    })
+    broadcast! socket, "new_annotation", rendered_ann
+  end
+
+  defp compute_additional_info(ann, socket) do
+    for result <- Rumbl.InfoSys.compute(ann.body, limit: 1, timeout: 10_000) do
+      Logger.debug("Received response: #{result.text}")
+      attrs = %{url: result.url, body: result.text, at: ann.at}
+      info_changeset =
+        Repo.get_by!(Rumbl.User, username: result.backend)
+        |> build_assoc(:annotations, video_id: ann.video_id)
+        |> Rumbl.Annotation.changeset(attrs)
+
+      case Repo.insert(info_changeset) do
+        { :ok, info_ann } -> broadcast_annotation(socket, info_ann)
+        { :error, _changeset } -> :ignore
+      end
     end
   end
 end

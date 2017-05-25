@@ -43,5 +43,5 @@ defmodule Rumbl.UserSocket do
   #     Rumbl.Endpoint.broadcast("users_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
-  def id(_socket), do: nil
+  # def id(_socket), do: nil
 end
