@@ -11,8 +11,7 @@ defmodule Rumbl do
       # Start the Ecto repository
       supervisor(Rumbl.Repo, []),
       # Start the endpoint when the application starts
-      supervisor(Rumbl.Endpoint, []),
-      supervisor(Rumbl.InfoSys.Supervisor, []),
+      supervisor(Rumbl.Endpoint, [])
       # Start your own worker by calling: Rumbl.Worker.start_link(arg1, arg2, arg3)
     ]
 
